@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leeroy's Yard</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #87CEEB; font-family: 'Comic Sans MS', cursive, sans-serif; transition: background 2s; }
+
+        /* Gloomy atmosphere */
+        body.gloomy { background: #2c3e50; }
+        body.gloomy .grass, body.gloomy .house, body.gloomy #leeroy-img { filter: brightness(0.4) grayscale(0.5); }
+        body.gloomy #balloon-container, body.gloomy #countdown-timer { display: none; }
+
+        #hunger-ui {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.9); padding: 10px;
+            border-radius: 10px; border: 3px solid #333; z-index: 200; width: 280px;
+        }
+        #hunger-text { font-size: 14px; margin-bottom: 5px; font-weight: bold; min-height: 40px; color: #333; }
+        #hunger-bar-container { width: 100%; height: 20px; background: #ddd; border: 1px solid #000; }
+        #hunger-bar { width: 100%; height: 100%; background: #4CAF50; transition: width 0.5s; }
+        
+        body.gloomy #hunger-bar { background: #ff0000; width: 100% !important; }
+
+        /* Countdown Timer */
+        #countdown-timer {
+            position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
+            font-size: 32px; color: rgba(255, 255, 255, 0.4); font-weight: bold; z-index: 0;
+            text-align: center; pointer-events: none;
+        }
+
+        /* Balloons */
+        .balloon {
+            position: absolute; width: 45px; height: 55px; border-radius: 50%;
+            z-index: 1; cursor: pointer; animation: rise linear forwards;
+        }
+        .balloon::after {
+            content: ""; position: absolute; bottom: -20px; left: 50%;
+            width: 1px; height: 25px; background: rgba(255,255,255,0.6);
+        }
+
+        /* Eerie Swarm Text */
+        .eerie-text {
+            position: absolute; color: #8b0000; font-weight: bold; font-size: 24px;
+            pointer-events: none; z-index: 1; white-space: nowrap;
+            animation: swarm linear forwards; text-shadow: 0 0 10px rgba(255,0,0,0.5);
+        }
+
+        @keyframes rise {
+            0% { transform: translateY(110vh) translateX(0); }
+            100% { transform: translateY(-20vh) translateX(20px); }
+        }
+
+        @keyframes swarm {
+            0% { transform: translate(0, 0); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.8; }
+            100% { transform: translate(var(--tw), var(--th)); opacity: 0; }
+        }
+
+        .popping { animation: pop-effect 0.2s forwards !important; pointer-events: none; }
+        @keyframes pop-effect {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .grass { position: absolute; bottom: 0; width: 100%; height: 40%; background: #4CAF50; z-index: 5; border-top: 5px solid #388E3C; transition: filter 2s; }
+        .house { position: absolute; bottom: 40%; left: 10%; width: 150px; height: 120px; background: #A52A2A; z-index: 2; transition: filter 2s; }
+        .roof { position: absolute; bottom: 100%; left: -15px; width: 0; height: 0; border-left: 90px solid transparent; border-right: 90px solid transparent; border-bottom: 60px solid #333; }
+        
+        .bowl { position: absolute; bottom: 40%; left: 260px; width: 60px; height: 25px; background: #777; border-radius: 0 0 30px 30px; cursor: pointer; z-index: 6; border: 2px solid #444; }
+        .food { position: absolute; top: -5px; left: 5px; width: 50px; height: 15px; background: #8B4513; border-radius: 50%; }
+
+        .cake-container { position: absolute; bottom: 40%; left: 360px; cursor: pointer; z-index: 7; display: flex; flex-direction: column-reverse; align-items: center; transition: transform 0.5s; }
+        .cake-layer { border: 1px solid #333; box-sizing: border-box; transition: transform 0.5s, margin 0.5s; }
+        .grey-big { width: 80px; height: 25px; background-color: #888888; }
+        .white-medium { width: 60px; height: 20px; background-color: #ffffff; }
+        .grey-small { width: 40px; height: 15px; background-color: #888888; position: relative; }
+        
+        #candle { width: 6px; height: 15px; background: #ffeb3b; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); display: none; }
+        #flame { width: 6px; height: 8px; background: orange; border-radius: 50% 50% 20% 20%; position: absolute; top: -8px; animation: flicker 0.1s infinite; }
+        @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+        body.gloomy .cake-container { transform: translateY(10px); }
+        body.gloomy .white-medium { transform: translateX(-15px) rotate(-5deg); margin-bottom: -5px; }
+        body.gloomy .grey-small { transform: translateX(10px) rotate(10deg); margin-bottom: -5px; }
+        body.gloomy #candle { display: block; }
+
+        .cat-container { position: absolute; bottom: 8%; right: 25%; cursor: pointer; z-index: 10; }
+        #leeroy-img { width: 100px; display: block; transition: filter 2s; }
+        .bubble { position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background: white; border: 2px solid black; border-radius: 15px; padding: 8px 12px; font-weight: bold; display: none; white-space: nowrap; z-index: 100; font-size: 16px; }
+
+        .item-dialogue { position: absolute; background: black; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; display: none; z-index: 200; pointer-events: none; white-space: nowrap; }
+        #cake-dialogue { bottom: 55%; left: 360px; }
+        #bowl-dialogue { bottom: 45%; left: 230px; }
+
+        #blackout { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; color: red; font-size: 35px; text-align: center; }
+        #death-content { width: 100%; display: flex; flex-direction: column; align-items: center; transition: opacity 1s; opacity: 0; }
+        .btn-container { margin-top: 30px; display: flex; gap: 50px; position: relative; width: 300px; justify-content: center; }
+        .death-btn { padding: 10px 25px; font-size: 20px; background: transparent; color: red; border: 2px solid red; cursor: pointer; font-family: inherit; }
+        .shake-btn { animation: button-shake 0.2s infinite; }
+    </style>
+</head>
+<body id="game-body" onclick="startMusic()">
+
+    <div id="balloon-container"></div>
+    <div id="countdown-timer"></div>
+    <div id="swarm-container"></div>
+
+    <div id="hunger-ui">
+        <div id="hunger-text">Kitty's hunger</div>
+        <div id="hunger-bar-container"><div id="hunger-bar"></div></div>
+    </div>
+
+    <audio id="bg-music-happy" loop src="Happy Birthday to You (Instrumental).mp3"></audio>
+    <audio id="bg-music-gloomy" loop src="0308(1).mov"></audio>
+    <audio id="meow-audio" src="animal_cat_meow.mp3"></audio>
+    <audio id="death-audio" src="zapsplat_multimedia_game_sound_arcade_explosion_bomb_small_medium_114954.mp3"></audio>
+    <audio id="pop-audio" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-one/toy_balloon_pop_001.mp3"></audio>
+
+    <div id="blackout">
+        <div id="death-content">
+            <div id="death-msg"></div>
+            <div id="choice-ui" style="display:none;">
+                <div class="btn-container">
+                    <button id="btn-no" class="death-btn shake-btn" onmouseover="transformToYes()">No</button>
+                    <button id="btn-yes" class="death-btn shake-btn" onclick="confess()">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="house"><div class="roof"></div></div>
+    <div id="bowl-dialogue" class="item-dialogue">Kitty doesn't want to eat</div>
+    <div class="bowl" onclick="feedCat()"><div class="food"></div></div>
+    <div id="cake-dialogue" class="item-dialogue">Kitty isn't too pleased with the cake anymore</div>
+    <div class="cake-container" onclick="handleCakeClick()">
+        <div class="cake-layer grey-big"></div>
+        <div class="cake-layer white-medium"></div>
+        <div class="cake-layer grey-small"><div id="candle"><div id="flame"></div></div></div>
+    </div>
+    <div class="grass"></div>
+    <div class="cat-container" onclick="interact()">
+        <div id="chat-bubble" class="bubble"></div>
+        <img src="Cat.png" alt="Leeroy" id="leeroy-img">
+    </div>
+
+    <script>
+        let hunger = 100;
+        let hungerDropRate = 3.33;
+        let isDead = false;
+        let deathsThisSession = parseInt(sessionStorage.getItem('session_deaths')) || 0;
+        let musicStarted = false;
+
+        function startMusic() {
+            if (musicStarted || isDead) return;
+            musicStarted = true;
+            if (deathsThisSession < 2) {
+                document.getElementById('bg-music-happy').play().catch(e => {});
+            } else {
+                document.getElementById('bg-music-gloomy').play().catch(e => {});
+            }
+        }
+
+        function pauseAllMusic() {
+            document.getElementById('bg-music-happy').pause();
+            document.getElementById('bg-music-gloomy').pause();
+        }
+
+        // Countdown logic
+        const targetDate = new Date("March 28, 2026 00:00:00").getTime();
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+            const timerEl = document.getElementById("countdown-timer");
+            if (distance < 0) { timerEl.innerHTML = "HAPPY BIRTHDAY!"; return; }
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            timerEl.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+        if (deathsThisSession < 2) setInterval(updateCountdown, 1000);
+
+        // Stage 1 & 2: Balloons
+        const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+        function createBalloon() {
+            if (deathsThisSession >= 2 || isDead) return;
+            const b = document.createElement('div');
+            b.className = 'balloon';
+            b.style.left = Math.random() * 95 + '%';
+            b.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            b.style.animationDuration = (Math.random() * 4 + 6) + 's';
+            b.onclick = (e) => { e.stopPropagation(); popBalloon(b); };
+            b.addEventListener('animationend', () => { if (b.parentNode) b.parentNode.removeChild(b); createBalloon(); });
+            document.getElementById('balloon-container').appendChild(b);
+        }
+
+        function popBalloon(el) {
+            el.classList.add('popping');
+            const audio = document.getElementById('pop-audio');
+            audio.currentTime = 0;
+            audio.play().catch(() => {}); 
+            setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); createBalloon(); }, 200);
+        }
+
+        // Stage 3: Eerie Swarm Text
+        function createEerieText() {
+            if (deathsThisSession < 2 || isDead) return;
+            const t = document.createElement('div');
+            t.className = 'eerie-text';
+            t.innerText = "HAPPY BIRTHDAY LEEROY ❤️";
+            t.style.left = Math.random() * 80 + '%';
+            t.style.top = Math.random() * 60 + '%';
+            
+            // Random movement vectors
+            const tw = (Math.random() - 0.5) * 200 + 'px';
+            const th = (Math.random() - 0.5) * 200 + 'px';
+            t.style.setProperty('--tw', tw);
+            t.style.setProperty('--th', th);
+            t.style.animationDuration = (Math.random() * 3 + 4) + 's';
+
+            t.addEventListener('animationend', () => {
+                if (t.parentNode) t.parentNode.removeChild(t);
+                createEerieText();
+            });
+            document.getElementById('swarm-container').appendChild(t);
+        }
+
+        // Initialize Spawns
+        if (deathsThisSession < 2) {
+            for(let i=0; i<6; i++) { setTimeout(createBalloon, i * 1500); }
+        } else {
+            document.getElementById('game-body').classList.add('gloomy');
+            hunger = 100;
+            for(let i=0; i<10; i++) { setTimeout(createEerieText, i * 500); }
+        }
+
+        const hungerInterval = setInterval(() => {
+            if (deathsThisSession < 2 && hunger > 0 && !isDead) {
+                hunger -= hungerDropRate;
+                document.getElementById('hunger-bar').style.width = Math.max(0, hunger) + "%";
+            } else if (deathsThisSession < 2 && hunger <= 0 && !isDead) {
+                isDead = true;
+                clearInterval(hungerInterval);
+                triggerDeath();
+            }
+        }, 1000);
+
+        function feedCat() { 
+            if(isDead) return;
+            if (deathsThisSession >= 2) {
+                const d = document.getElementById('bowl-dialogue');
+                d.style.display = (d.style.display === 'block') ? 'none' : 'block';
+                return;
+            }
+            hunger = 100; 
+        }
+
+        function interact() {
+            if(isDead) return;
+            const b = document.getElementById('chat-bubble');
+            if (deathsThisSession < 2) {
+                document.getElementById('meow-audio').currentTime = 0; 
+                document.getElementById('meow-audio').play().catch(e => {});
+                const phrases = ["Leeroy!", "Leeroy is a cutie <3", "LEEROYYYYY", "meow", "Happy birthday Leeroy!"];
+                b.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            } else {
+                const spooky = ["...", "?", "(Kitty is scared)", "(Kitty is seeking something)"];
+                b.innerText = spooky[Math.floor(Math.random() * spooky.length)];
+            }
+            b.style.display = 'block';
+            setTimeout(() => b.style.display = 'none', 2000);
+        }
+
+        function handleCakeClick() {
+            if (isDead) return;
+            if (deathsThisSession >= 2) {
+                const d = document.getElementById('cake-dialogue');
+                d.style.display = (d.style.display === 'block') ? 'none' : 'block';
+                return;
+            }
+            hungerDropRate = 0.55;
+            document.getElementById('hunger-text').innerText = "Leeroy ate the cookies/cream now Kitty is happy!";
+            setTimeout(() => { document.getElementById('hunger-text').innerText = "Kitty's hunger"; }, 5000);
+            setTimeout(() => { hungerDropRate = 3.33; }, 180000);
+        }
+
+        function triggerDeath() {
+            deathsThisSession++;
+            sessionStorage.setItem('session_deaths', deathsThisSession);
+            pauseAllMusic();
+            const blackout = document.getElementById('blackout');
+            const content = document.getElementById('death-content');
+            const msg = document.getElementById('death-msg');
+            document.getElementById('death-audio').play();
+            blackout.style.display = 'flex';
+            content.style.opacity = "1";
+            if (deathsThisSession === 1) {
+                msg.innerText = "You let Kitty die";
+                setTimeout(() => location.reload(), 6000);
+            } else {
+                msg.innerText = "You let Kitty die once more";
+                setTimeout(() => {
+                    content.style.opacity = "0";
+                    setTimeout(() => {
+                        msg.innerText = "Do you hate Kitty?";
+                        document.getElementById('choice-ui').style.display = 'block';
+                        content.style.opacity = "1";
+                    }, 1000);
+                }, 5000);
+            }
+        }
+
+        function transformToYes() {
+            const noBtn = document.getElementById('btn-no');
+            noBtn.innerText = "Yes";
+            noBtn.onclick = confess;
+        }
+
+        function confess() {
+            document.getElementById('choice-ui').style.display = 'none';
+            document.getElementById('death-msg').innerText = "...At least you're being honest";
+            setTimeout(() => location.reload(), 4000);
+        }
+    </script>
+</body>
+</html>
+
